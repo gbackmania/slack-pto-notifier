@@ -85,13 +85,14 @@ namespace PTO
                             lines.Add(line);
                         }
                     }
-                    message = lines.BuildMessage() + AdvertiseOtherFeatures();
                     //None of the @ mentions are on pto
-                    if (string.IsNullOrEmpty(message)) 
+                    if (lines == null || !lines.Any()) 
                     {
                         log.LogInformation($"mentioned are not on pto");
                         return new OkObjectResult("mentioned are not on pto");
                     }
+
+                    message = lines.BuildMessage() + AdvertiseOtherFeatures();
 
                     var chatRequest = new HttpRequestMessage(HttpMethod.Post, new Uri(@"https://slack.com/api/chat.postMessage"));
                     chatRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Constants.BotUserOAuthToken);

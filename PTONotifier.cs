@@ -38,7 +38,7 @@ namespace PTO
                 var users = messageElements?.GetDistinctUsers();
 
                 if (users == null || !users.Any()) return new OkObjectResult("no mentions");
-                
+
                 string message = string.Empty;
                 List<string> lines = new List<string>();
 
@@ -62,37 +62,32 @@ namespace PTO
 
                         var content = await userInfoResponse.Content.ReadAsStringAsync();
                         jsonResponse = JsonConvert.DeserializeObject(content);
-                        
+
                         var user = jsonResponse?.user;
                         string status = user?.profile?.status_text ?? string.Empty;
                         string statusExpiresOn = user?.profile?.status_expiration ?? "0";
                         string displayName = user?.profile?.display_name ?? "Guess who";//Should fall back to full_name...
-                        var userTZ = user?.tz_label;
+                        string userTZ = user?.tz_label;
 
-                        var utc = Constants.Epoch.AddSeconds(Convert.ToInt64(statusExpiresOn));
-                        var userTZTime = utc.AddSeconds(Convert.ToInt64(user?.tz_offset));
-                        
-                        var backtick = "`";
+                        DateTime utc = Constants.Epoch.AddSeconds(Convert.ToInt64(statusExpiresOn));
+                        DateTime userTZTime = utc.AddSeconds(Convert.ToInt64(user?.tz_offset));
+                       
                         string line = null;
-                        
+
                         if (status.HasAnyKeywords(Constants.Keywords) || status.HasAnyPhrases(Constants.Phrases))
                         {
-                            line = displayName + " seems to be off according to their status.";
-                            if (!string.IsNullOrEmpty(statusExpiresOn) && statusExpiresOn != "0")
-                            {
-                                line = line.TrimEnd('.') + " until " + backtick + userTZTime + " " + userTZ + backtick + " or " + backtick + utc + " UTC." + backtick;
-                            }
+                            line = displayName + " seems to be off according to their status" + AppendPTOUntilPhraseIfPresent(userTZ, userTZTime, utc);
                             lines.Add(line);
                         }
                     }
                     //None of the @ mentions are on pto
-                    if (lines == null || !lines.Any()) 
+                    if (lines == null || !lines.Any())
                     {
                         log.LogInformation($"mentioned are not on pto");
                         return new OkObjectResult("mentioned are not on pto");
                     }
 
-                    message = lines.BuildMessage() + AdvertiseOtherFeatures();
+                    message = lines.BuildMessage().AddLineBreak(2) + AdvertiseOtherFeatures();
 
                     var chatRequest = new HttpRequestMessage(HttpMethod.Post, new Uri(@"https://slack.com/api/chat.postMessage"));
                     chatRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Constants.BotUserOAuthToken);
@@ -121,9 +116,17 @@ namespace PTO
             return new OkObjectResult("pto message posted successfully.");
         }
 
-        public static string AdvertiseOtherFeatures()
+        private static string AdvertiseOtherFeatures()
         {
-            return $"{Environment.NewLine}{Environment.NewLine}_By the way, to see which team members are off, type `/whoisoff` in slack message box, aka command line._";
+            return $"_By the way, to see which team members are off, type `/whoisoff` in slack message box, aka command line._";
+        }
+
+        private static string AppendPTOUntilPhraseIfPresent(string userTZLabel, DateTime userTZTime, DateTime utc)
+        {
+            var backtick = "`";
+            if (utc == DateTime.UnixEpoch) return ".";
+            
+            return " until " + backtick + userTZTime + " " + userTZLabel + backtick + " or " + backtick + utc + " UTC." + backtick;
         }
     }
 }

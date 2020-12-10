@@ -19,16 +19,17 @@ namespace PTO
     {
         [FunctionName("PTONotifier")]
         public static async Task<IActionResult> Run(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)] HttpRequest req,
-            ILogger log)
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)] HttpRequest req, ILogger log)
         {
             try
             {
                 string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
                 dynamic data = JsonConvert.DeserializeObject(requestBody);
 
-                var sentByUser = data?.@event?.user;
+                //Verify request URL by responding to one-time initial challenge during slack app creation. dynamic type makes this a cake in the park ❤️
+                if(data?.challenge != null) return new OkObjectResult(data?.challenge);
 
+                var sentByUser = data?.@event?.user;
                 if(sentByUser == Constants.PTONotifierUserId) return new OkObjectResult("disregard messages by this app user/bot");
 
                 JArray messageElements = data?.@event?.blocks?.First?.elements?.First?.elements;
@@ -41,7 +42,6 @@ namespace PTO
 
                 string message = string.Empty;
                 List<string> lines = new List<string>();
-
                 using (var httpClient = new HttpClient())
                 {
                     dynamic jsonResponse = null;
@@ -76,16 +76,12 @@ namespace PTO
 
                         if (status.HasAnyKeywords(Constants.Keywords) || status.HasAnyPhrases(Constants.Phrases))
                         {
-                            line = displayName + " seems to be off according to their status" + AppendPTOUntilPhraseIfPresent(userTZ, userTZTime, utc);
+                            line = displayName + " seems to be off according to their status" + GetPTOUntilPhraseIfPresent(userTZ, userTZTime, utc);
                             lines.Add(line);
                         }
                     }
                     //None of the @ mentions are on pto
-                    if (lines == null || !lines.Any())
-                    {
-                        log.LogInformation($"mentioned are not on pto");
-                        return new OkObjectResult("mentioned are not on pto");
-                    }
+                    if (lines == null || !lines.Any()) return new OkObjectResult("mentioned are not on pto");
 
                     message = lines.BuildMessage().AddLineBreak(2) + AdvertiseOtherFeatures();
 
@@ -121,7 +117,7 @@ namespace PTO
             return $"_By the way, to see which team members are off, type `/whoisoff` in slack message box, aka command line._";
         }
 
-        private static string AppendPTOUntilPhraseIfPresent(string userTZLabel, DateTime userTZTime, DateTime utc)
+        private static string GetPTOUntilPhraseIfPresent(string userTZLabel, DateTime userTZTime, DateTime utc)
         {
             var backtick = "`";
             if (utc == DateTime.UnixEpoch) return ".";

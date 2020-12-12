@@ -6,6 +6,7 @@ namespace PTO
     {
         public static readonly List<string> Keywords = new List<string>() { "pto", "vacation", "ooo" };
         public static readonly List<string> Phrases = new List<string>() { "out sick" };
+        public static readonly List<string> PTOEmojis = new List<string> { ":pto:" };
         public static readonly string BotUserOAuthToken = "xoxb-**";
         //Change this based on the app user/bot id
         public static readonly string PTONotifierUserId = "U**";

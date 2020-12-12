@@ -7,6 +7,10 @@ namespace PTO
 {
     public static class Extensions
     {
+        public static bool IsPTO(this string status)
+        {
+            return status.HasAnyKeywords(Constants.Keywords) || status.HasAnyPhrases(Constants.Phrases) || status.HasAnyKeywords(Constants.PTOEmojis);
+        }
         public static bool HasAnyKeywords(this string status, List<string> keywords)
         {
             return status.Split(null)
@@ -17,7 +21,7 @@ namespace PTO
 
         public static bool HasAnyPhrases(this string status, List<string> phrases)
         {
-            return phrases.Contains(status.Trim().ToLowerInvariant());
+            return phrases.Where(p => status.Trim().ToLowerInvariant().Contains(p)).Any();
         }
 
         public static IEnumerable<JToken> GetDistinctUsers(this JArray innerElements)

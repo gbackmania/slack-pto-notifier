@@ -37,13 +37,14 @@ namespace PTO
                 var ptoMembers = members
                    ?.Where(e => e.Value<bool>("deleted") == false)
                    ?.Where(e => e.Value<bool>("is_bot") == false)
-                   ?.Where(e => ((string)e.Value<dynamic>("profile")?.Value<string>("status_text")).HasAnyKeywords(Constants.Keywords) || ((string)e.Value<dynamic>("profile")?.Value<string>("status_text")).HasAnyPhrases(Constants.Phrases));
+                   ?.Where(e => ((string)e.Value<dynamic>("profile")?.Value<string>("status_text")).IsPTO() || ((string)e.Value<dynamic>("profile")?.Value<string>("status_emoji")).IsPTO())
+                   ?.OrderBy(e => ((string)e.Value<dynamic>("profile")?.Value<string>("display_name_normalized")));
 
                 if (ptoMembers == null || !ptoMembers.Any()) return new OkObjectResult("No team member is currently off according to their status.".AddLineBreak(2) + Constants.BotAlgoDesc);
 
                 string statusExpiresOn = null;
                 List<string> lines = new List<string>();
-                string displayName = null;
+                string realName = null;
                 DateTime utc;
                 string until = null;
                 foreach (JToken u in ptoMembers)
@@ -52,8 +53,8 @@ namespace PTO
                     utc = Constants.Epoch.AddSeconds(Convert.ToInt64(statusExpiresOn));
                     until = statusExpiresOn != null && statusExpiresOn != "0" ? $"until `{utc} UTC`" : string.Empty;
 
-                    displayName = u.Value<dynamic>("profile")?.Value<string>("display_name");
-                    lines.Add($"• {displayName} {until}");
+                    realName = u.Value<dynamic>("profile")?.Value<string>("real_name");
+                    lines.Add($"• {realName} {until}");
                 }
                 var message = "The following team members are currently off according to their status.".AddLineBreak(2) + lines.BuildMessage().AddLineBreak(2) + Constants.BotAlgoDesc;
                 return new OkObjectResult(message);
@@ -61,7 +62,7 @@ namespace PTO
             catch (System.Exception ex)
             {
                 log.LogError($"Error: {ex.StackTrace}");
-                return new OkObjectResult(@"Oopsie! Something went wrong. Please try `\whosoff` or `\whoisoff`command again.");
+                return new OkObjectResult(@"Oopsie! Something went wrong. Please try `\whoisoff`command again.");
             }
         }
     }

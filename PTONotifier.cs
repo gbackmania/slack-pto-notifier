@@ -65,6 +65,7 @@ namespace PTO
 
                         var user = jsonResponse?.user;
                         string status = user?.profile?.status_text ?? string.Empty;
+                        string statusEmoji = user?.profile?.status_emoji ?? string.Empty;
                         string statusExpiresOn = user?.profile?.status_expiration ?? "0";
                         string displayName = user?.profile?.display_name ?? "Guess who";//Should fall back to full_name...
                         string userTZ = user?.tz_label;
@@ -74,7 +75,7 @@ namespace PTO
                        
                         string line = null;
 
-                        if (status.HasAnyKeywords(Constants.Keywords) || status.HasAnyPhrases(Constants.Phrases))
+                        if (status.IsPTO() || statusEmoji.IsPTO())
                         {
                             line = displayName + " seems to be off according to their status" + GetPTOUntilPhraseIfPresent(userTZ, userTZTime, utc);
                             lines.Add(line);

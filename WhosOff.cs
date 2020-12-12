@@ -10,6 +10,9 @@ using System.Net.Http;
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
 using System.Linq;
+using System.IO;
+using System.Collections.Specialized;
+
 namespace PTO
 {
     public static class WhosOff
@@ -42,16 +45,24 @@ namespace PTO
 
                 if (ptoMembers == null || !ptoMembers.Any()) return new OkObjectResult("No team member is currently off according to their status.".AddLineBreak(2) + Constants.BotAlgoDesc);
 
-                string statusExpiresOn = null;
+                string invokedUser = await GetInvokedUserId(req);
+                //Get invoked user tz_offset
+                int invokedUserTzOffset = members?.First(e => e.Value<string>("id") == invokedUser)?.Value<int>("tz_offset") ?? 0;
+                string invokedUserTzLabel = members?.First(e => e.Value<string>("id") == invokedUser)?.Value<string>("tz_label");
+
+                Int64 statusExpiresOn;
                 List<string> lines = new List<string>();
                 string realName = null;
                 DateTime utc;
+                DateTime timeInInvokedUserTz;
                 string until = null;
                 foreach (JToken u in ptoMembers)
                 {
-                    statusExpiresOn = u.Value<dynamic>("profile")?.Value<string>("status_expiration") ?? null;
-                    utc = Constants.Epoch.AddSeconds(Convert.ToInt64(statusExpiresOn));
-                    until = statusExpiresOn != null && statusExpiresOn != "0" ? $"until `{utc} UTC`" : string.Empty;
+                    statusExpiresOn = u.Value<dynamic>("profile")?.Value<Int64>("status_expiration") ?? 0;
+                    utc = Constants.Epoch.AddSeconds(statusExpiresOn);
+                    timeInInvokedUserTz = utc.AddSeconds(invokedUserTzOffset);
+
+                    until = statusExpiresOn != 0 ? $"until `{timeInInvokedUserTz} {invokedUserTzLabel}`" : string.Empty;
 
                     realName = u.Value<dynamic>("profile")?.Value<string>("real_name");
                     lines.Add($"• {realName} {until}");
@@ -64,6 +75,14 @@ namespace PTO
                 log.LogError($"Error: {ex.StackTrace}");
                 return new OkObjectResult(@"Oopsie! Something went wrong. Please try `\whoisoff`command again.");
             }
+        }
+
+        private async static Task<string> GetInvokedUserId(HttpRequest req)
+        {
+            string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
+            string query = System.Web.HttpUtility.UrlDecode(requestBody);
+            NameValueCollection result = System.Web.HttpUtility.ParseQueryString(query);
+            return result["user_id"].Trim();
         }
     }
 }

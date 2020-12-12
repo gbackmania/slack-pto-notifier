@@ -38,7 +38,7 @@ namespace PTO
                    ?.Where(e => e.Value<bool>("deleted") == false)
                    ?.Where(e => e.Value<bool>("is_bot") == false)
                    ?.Where(e => ((string)e.Value<dynamic>("profile")?.Value<string>("status_text")).IsPTO() || ((string)e.Value<dynamic>("profile")?.Value<string>("status_emoji")).IsPTO())
-                   ?.OrderBy(e => ((string)e.Value<dynamic>("profile")?.Value<string>("display_name_normalized")));
+                   ?.OrderBy(e => ((string)e.Value<dynamic>("profile")?.Value<string>("real_name_normalized")));
 
                 if (ptoMembers == null || !ptoMembers.Any()) return new OkObjectResult("No team member is currently off according to their status.".AddLineBreak(2) + Constants.BotAlgoDesc);
 

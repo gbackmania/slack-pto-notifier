@@ -63,5 +63,13 @@ namespace PTO
         {
             return members?.OrderBy(e => ((string)e.Value<dynamic>("profile")?.Value<string>("real_name_normalized")));
         }
+        public static int GetTimeZoneOffset(this JArray members, string user)
+        {
+            return members?.First(e => e.Value<string>("id") == user)?.Value<int>("tz_offset") ?? 0;
+        }
+        public static string GetTimeZoneLabel(this JArray members, string user)
+        {
+            return members?.First(e => e.Value<string>("id") == user)?.Value<string>("tz_label");
+        }
     }
 }

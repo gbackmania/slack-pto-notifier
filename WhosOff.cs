@@ -47,8 +47,8 @@ namespace PTO
 
                 string invokedUser = await GetInvokedUserId(req);
                 //Get invoked user tz_offset
-                int invokedUserTzOffset = members?.First(e => e.Value<string>("id") == invokedUser)?.Value<int>("tz_offset") ?? 0;
-                string invokedUserTzLabel = members?.First(e => e.Value<string>("id") == invokedUser)?.Value<string>("tz_label");
+                int invokedUserTzOffset = members.GetTimeZoneOffset(invokedUser);
+                string invokedUserTzLabel = members.GetTimeZoneLabel(invokedUser);
 
                 Int64 statusExpiresOn;
                 List<string> lines = new List<string>();

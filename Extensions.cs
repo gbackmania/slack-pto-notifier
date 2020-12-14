@@ -47,5 +47,21 @@ namespace PTO
                 default: return line + string.Empty;
             }
         }
+        public static IEnumerable<JToken> RemoveDeletedMembers(this JArray members)
+        {
+            return members?.Where(e => e.Value<bool>("deleted") == false);
+        }
+        public static IEnumerable<JToken> RemoveBots(this IEnumerable<JToken> members)
+        {
+            return members?.Where(e => e.Value<bool>("is_bot") == false);
+        }
+        public static IEnumerable<JToken> GetMembersWithPTOStatus(this IEnumerable<JToken> members)
+        {
+            return members?.Where(e => ((string)e.Value<dynamic>("profile")?.Value<string>("status_text")).IsPTO() || ((string)e.Value<dynamic>("profile")?.Value<string>("status_emoji")).IsPTO());
+        }
+        public static IEnumerable<JToken> SortByRealName(this IEnumerable<JToken> members)
+        {
+            return members?.OrderBy(e => ((string)e.Value<dynamic>("profile")?.Value<string>("real_name_normalized")));
+        }
     }
 }

@@ -37,18 +37,17 @@ namespace PTO
                     jsonResponse = JsonConvert.DeserializeObject(content);
                 }
                 JArray members = jsonResponse?.members;
-                var ptoMembers = members
+                var activeMembers = members
                     ?.RemoveDeletedMembers()
-                    ?.RemoveBots()
+                    ?.RemoveBots();
+                var ptoMembers = activeMembers
                     ?.GetMembersWithPTOStatus()
                     ?.SortByRealName();
 
                 if (ptoMembers == null || !ptoMembers.Any()) return new OkObjectResult("No team member is currently off according to their status.".AddLineBreak(2) + Constants.BotAlgoDesc);
 
                 string invokedUser = await GetInvokedUserId(req);
-                //Get invoked user tz_offset
-                int invokedUserTzOffset = members.GetTimeZoneOffset(invokedUser);
-                string invokedUserTzLabel = members.GetTimeZoneLabel(invokedUser);
+                var (invokedUserTzOffset, invokedUserTzLabel) = activeMembers.GetTimeZoneOffsetAndLabel(invokedUser);
 
                 Int64 statusExpiresOn;
                 List<string> lines = new List<string>();

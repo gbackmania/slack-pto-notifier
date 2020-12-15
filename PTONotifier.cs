@@ -30,7 +30,7 @@ namespace PTO
                 if(data?.challenge != null) return new OkObjectResult(data?.challenge);
 
                 var sentByUser = data?.@event?.user;
-                if(sentByUser == Constants.PTONotifierUserId) return new OkObjectResult("disregard messages by this app user/bot");
+                if(sentByUser == Secrets.PTONotifierUserId) return new OkObjectResult("disregard messages by this app user/bot");
 
                 JArray messageElements = data?.@event?.blocks?.First?.elements?.First?.elements;
                 var channel = data?.@event?.channel;
@@ -55,7 +55,7 @@ namespace PTO
                         {
                             Content = new FormUrlEncodedContent(paramList)
                         };
-                        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Constants.BotUserOAuthToken);
+                        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Secrets.BotUserOAuthToken);
 
                         var userInfoResponse = await httpClient.SendAsync(request);
                         userInfoResponse.EnsureSuccessStatusCode();
@@ -87,7 +87,7 @@ namespace PTO
                     message = lines.BuildMessage().AddLineBreak(2) + AdvertiseOtherFeatures();
 
                     var chatRequest = new HttpRequestMessage(HttpMethod.Post, new Uri(@"https://slack.com/api/chat.postMessage"));
-                    chatRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Constants.BotUserOAuthToken);
+                    chatRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Secrets.BotUserOAuthToken);
 
                     var fullMessage = "Hello there,".AddLineBreak(2) + message;
                     var postBody = JsonConvert.SerializeObject(

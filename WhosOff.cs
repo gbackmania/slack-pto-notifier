@@ -28,7 +28,7 @@ namespace PTO
                 using (var httpClient = new HttpClient())
                 {
                     var request = new HttpRequestMessage(HttpMethod.Get, new Uri(@"https://slack.com/api/users.list"));
-                    request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Constants.BotUserOAuthToken);
+                    request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Secrets.BotUserOAuthToken);
 
                     var userInfoResponse = await httpClient.SendAsync(request);
                     userInfoResponse.EnsureSuccessStatusCode();

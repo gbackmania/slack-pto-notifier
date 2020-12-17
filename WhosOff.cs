@@ -52,9 +52,9 @@ namespace PTO
                 Int64 statusExpiresOn;
                 List<string> lines = new List<string>();
                 string realName = null;
+                string until = null;
                 DateTime utc;
                 DateTime timeInInvokedUserTz;
-                string until = null;
                 foreach (JToken u in ptoMembers)
                 {
                     statusExpiresOn = u.Value<dynamic>("profile")?.Value<Int64>("status_expiration") ?? 0;

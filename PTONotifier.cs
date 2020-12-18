@@ -123,7 +123,7 @@ namespace PTO
             var backtick = "`";
             if (utc == DateTime.UnixEpoch) return ".";
             
-            return " until " + backtick + userTZTime + " " + userTZLabel + backtick + " or " + backtick + utc + " UTC." + backtick;
+            return " until " + backtick + userTZTime.ToShortenedLongForm() + " " + userTZLabel + backtick + " or " + backtick + utc.ToShortenedLongForm() + " UTC." + backtick;
         }
     }
 }

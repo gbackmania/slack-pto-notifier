@@ -69,5 +69,15 @@ namespace PTO
             return (match?.Value<int>("tz_offset") ?? 0,
                     match?.Value<string>("tz_label") ?? string.Empty);
         }
+
+        public static string ToShortenedLongForm(this DateTime date)
+        {
+            var items = date.ToLongDateString().Split(new char[] {','}, StringSplitOptions.RemoveEmptyEntries);
+            var day = items[0].Substring(0, 3);
+            var monthItems = items[1].Split(new char[] {' '}, StringSplitOptions.RemoveEmptyEntries);
+            var month = monthItems[0].Substring(0, 3) + " " + monthItems[1];
+            var year = items[2].Trim();
+            return day + ", " + month + ", " + year + ", " + date.ToShortTimeString(); //Ex: Thu, Dec 17, 20
+        }
     }
 }

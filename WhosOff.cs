@@ -61,12 +61,12 @@ namespace PTO
                     utc = Constants.Epoch.AddSeconds(statusExpiresOn);
                     timeInInvokedUserTz = utc.AddSeconds(invokedUserTzOffset);
 
-                    until = statusExpiresOn != 0 ? $"until `{timeInInvokedUserTz} {invokedUserTzLabel}`" : string.Empty;
+                    until = statusExpiresOn != 0 ? $"until `{timeInInvokedUserTz.ToShortenedLongForm()}`" : string.Empty;
 
                     realName = u.Value<dynamic>("profile")?.Value<string>("real_name");
                     lines.Add($"• {realName} {until}");
                 }
-                var message = "The following team members are currently off according to their status.".AddLineBreak(2) + lines.BuildMessage().AddLineBreak(2) + Constants.BotAlgoDesc;
+                var message = $"The following team members are currently off according to their status. All times refer to your _current slack timezone_ - `{invokedUserTzLabel}`".AddLineBreak(2) + lines.BuildMessage().AddLineBreak(2) + Constants.BotAlgoDesc;
                 return new OkObjectResult(message);
             }
             catch (System.Exception ex)

@@ -1,0 +1,2 @@
+-Add package
+dotnet add package Microsoft.Azure.WebJobs.Extensions.ServiceBus

@@ -77,7 +77,7 @@ namespace PTO
             var monthItems = items[1].Split(new char[] {' '}, StringSplitOptions.RemoveEmptyEntries);
             var month = monthItems[0].Substring(0, 3) + " " + monthItems[1];
             var year = items[2].Trim();
-            return day + ", " + month + ", " + year + ", " + date.ToShortTimeString(); //Ex: Thu, Dec 17, 20
+            return day + ", " + month + ", " + year + ", " + date.ToShortTimeString(); //Ex: Thu, Dec 17, 2021, 1:30 PM
         }
     }
 }

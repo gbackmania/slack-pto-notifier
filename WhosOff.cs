@@ -12,6 +12,7 @@ using Newtonsoft.Json.Linq;
 using System.Linq;
 using System.IO;
 using System.Collections.Specialized;
+using Microsoft.Azure.WebJobs.ServiceBus;
 
 namespace PTO
 {
@@ -20,10 +21,13 @@ namespace PTO
         [FunctionName("WhosOff")]
         public static async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)] HttpRequest req,
+            [ServiceBus("whosoff", Connection = "SERVICEBUS_CONNECTION_STRING", EntityType = EntityType.Queue)]ICollector<string> queueCollector,
             ILogger log)
         {
             try
             {
+                string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
+                queueCollector.Add(requestBody);
                 dynamic jsonResponse = null;
                 using (var httpClient = new HttpClient())
                 {
@@ -35,6 +39,7 @@ namespace PTO
 
                     var content = await userInfoResponse.Content.ReadAsStringAsync();
                     jsonResponse = JsonConvert.DeserializeObject(content);
+                    //PrintHeaders(req, log);
                 }
                 JArray members = jsonResponse?.members;
                 var activeMembers = members
@@ -46,7 +51,7 @@ namespace PTO
 
                 if (ptoMembers == null || !ptoMembers.Any()) return new OkObjectResult("No team member is currently off according to their status.".AddLineBreak(2) + Constants.BotAlgoDesc);
 
-                string invokedUser = await GetInvokedUserId(req);
+                string invokedUser = GetInvokedUserId(requestBody);
                 var (invokedUserTzOffset, invokedUserTzLabel) = activeMembers.GetTimeZoneOffsetAndLabel(invokedUser);
 
                 Int64 statusExpiresOn;
@@ -72,16 +77,26 @@ namespace PTO
             catch (System.Exception ex)
             {
                 log.LogError($"Error: {ex.StackTrace}");
-                return new OkObjectResult(@"Oopsie! Something went wrong. Please try `\whoisoff`command again.");
+                return new OkObjectResult(@"Oopsie! Something went wrong. Please try `/whoisoff` command again.");
             }
         }
 
-        private async static Task<string> GetInvokedUserId(HttpRequest req)
+        private static string GetInvokedUserId(string requestBody)
         {
-            string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
             string query = System.Web.HttpUtility.UrlDecode(requestBody);
             NameValueCollection result = System.Web.HttpUtility.ParseQueryString(query);
             return result["user_id"].Trim();
+        }
+
+        private static void PrintHeaders(HttpRequest req, ILogger log)
+        {
+            string h = null;
+            foreach (var header in req.Headers)
+            {
+                string headerContent = string.Join(",", header.Value.ToArray());
+                h += $"{header.Key}: {headerContent}{Environment.NewLine}";
+            }
+            log.LogInformation(h);
         }
     }
 }

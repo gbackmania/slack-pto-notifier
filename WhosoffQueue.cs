@@ -98,22 +98,41 @@ namespace PTO
 
         private static async Task PostEphemeralMessage(string message)
         {
+
+            var response = await PostEphemeralMessageActual(message, messageTo.channel, messageTo.invokedUser);
+
+            dynamic postEphemeralResponse = JsonConvert.DeserializeObject(await response.Content.ReadAsStringAsync());
+            if (postEphemeralResponse?.error == null) return;
+            //channel and user are the same so we can send the message directly to the user
+            await PostEphemeralMessageActual(message, messageTo.invokedUser, messageTo.invokedUser);
+        }
+
+        private static async Task<HttpResponseMessage> PostEphemeralMessageActual(string message, string channel, string user)
+        {
             using (var httpClient = new HttpClient())
             {
                 var request = new HttpRequestMessage(HttpMethod.Post, new Uri(@"https://slack.com/api/chat.postEphemeral"));
                 request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Secrets.BotUserOAuthToken);
-                var postBody = JsonConvert.SerializeObject(
-                    new //Anonymous type 
-                    {
-                        channel = messageTo.channel,
-                        text = message,
-                        user = messageTo.invokedUser
-                    },
-                    Formatting.Indented, new JsonSerializerSettings { DefaultValueHandling = DefaultValueHandling.Ignore });
+
+                var postBody = BuildPostEphemeralMessageBody(message, channel, user);
 
                 request.Content = new StringContent(postBody, Encoding.UTF8, @"application/json");
                 var response = await httpClient.SendAsync(request);
+                response.EnsureSuccessStatusCode();
+                return response;
             }
+        }
+        private static string BuildPostEphemeralMessageBody(string message, string channel, string user)
+        {
+            var postBody = JsonConvert.SerializeObject(
+                    new
+                    {
+                        channel = channel,
+                        text = message,
+                        user = user
+                    },
+                    Formatting.Indented, new JsonSerializerSettings { DefaultValueHandling = DefaultValueHandling.Ignore });
+            return postBody;
         }
 
         private static void LogRequest(NameValueCollection coll)
@@ -122,6 +141,6 @@ namespace PTO
             var parameters = coll.AllKeys.SelectMany(coll.GetValues, (k, v) => new { key = k, value = v });
             foreach (var p in parameters) printableQuery += $"{p.key}: {p.value}, ";
             log.LogInformation($"off the queue - {printableQuery}");
-        } 
+        }
     }
 }

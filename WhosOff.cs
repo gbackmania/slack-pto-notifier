@@ -13,6 +13,8 @@ using System.Linq;
 using System.IO;
 using System.Collections.Specialized;
 using Microsoft.Azure.WebJobs.ServiceBus;
+using Microsoft.Azure.ServiceBus;
+using System.Text;
 
 namespace PTO
 {
@@ -21,13 +23,16 @@ namespace PTO
         [FunctionName("WhosOff")]
         public static async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)] HttpRequest req,
-            [ServiceBus("whosoff", Connection = "SERVICEBUS_CONNECTION_STRING", EntityType = EntityType.Queue)] ICollector<string> queueCollector,
+            [ServiceBus("whosoff", Connection = "SERVICEBUS_CONNECTION_STRING", EntityType = EntityType.Queue)] ICollector<Message> queueCollector,
             ILogger log)
         {
             try
             {
                 string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
-                queueCollector.Add(requestBody);
+                var bytes = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(requestBody));
+                var message = new Message(bytes){ MessageId = Guid.NewGuid().ToString() };
+               
+                queueCollector.Add(message);
                 return new OkObjectResult(string.Empty); //TODO: Send "is typing message"
             }
             catch (System.Exception ex)

@@ -21,13 +21,13 @@ namespace PTO
         private static (string channel, string invokedUser) messageTo = (null, null);
         private static ILogger log = null;
         [FunctionName("WhosoffQueue")]
-        public static async Task Run([ServiceBusTrigger("whosoff", Connection = "SERVICEBUS_CONNECTION_STRING")] string myQueueItem, ILogger logger)
+        public static async Task Run([ServiceBusTrigger("whosoff", Connection = "SERVICEBUS_CONNECTION_STRING")] string queueItem, ILogger logger)
         {
             try
             {
                 log = logger;
                 string message = null;
-                string requestBody = myQueueItem;
+                string requestBody = queueItem;
 
                 dynamic jsonResponse = null;
                 using (var httpClient = new HttpClient())

@@ -11,4 +11,5 @@ variable "location" {
 variable subscription {
   type = string
   description = "The Azure subscription id"
+  default = "00000000-0000-0000-0000-000000000000"
 }

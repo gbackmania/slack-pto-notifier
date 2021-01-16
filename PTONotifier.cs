@@ -27,10 +27,10 @@ namespace PTO
                 dynamic data = JsonConvert.DeserializeObject(requestBody);
 
                 //Verify request URL by responding to one-time initial challenge during slack app creation. dynamic type makes this a cake in the park ❤️
-                if(data?.challenge != null) return new OkObjectResult(data?.challenge);
+                if (data?.challenge != null) return new OkObjectResult(data?.challenge);
 
                 var sentByUser = data?.@event?.user;
-                if(sentByUser == Secrets.PTONotifierUserId) return new OkObjectResult("disregard messages by this app user/bot");
+                if (sentByUser == Secrets.PTONotifierUserId) return new OkObjectResult("disregard messages by this app user/bot");
 
                 JArray messageElements = data?.@event?.blocks?.First?.elements?.First?.elements;
                 var channel = data?.@event?.channel;
@@ -42,69 +42,68 @@ namespace PTO
 
                 string message = string.Empty;
                 List<string> lines = new List<string>();
-                using (var httpClient = new HttpClient())
+
+                dynamic jsonResponse = null;
+                foreach (JToken u in users)
                 {
-                    dynamic jsonResponse = null;
-                    foreach (JToken u in users)
-                    {
-                        var paramList = new Dictionary<string, string>()
+                    var paramList = new Dictionary<string, string>()
                         {
                             {"user", u.Value<string>("user_id") }
                         };
-                        var request = new HttpRequestMessage(HttpMethod.Post, new Uri(@"https://slack.com/api/users.info"))
-                        {
-                            Content = new FormUrlEncodedContent(paramList)
-                        };
-                        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Secrets.BotUserOAuthToken);
+                    var request = new HttpRequestMessage(HttpMethod.Post, new Uri(@"https://slack.com/api/users.info"))
+                    {
+                        Content = new FormUrlEncodedContent(paramList)
+                    };
+                    request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Secrets.BotUserOAuthToken);
 
-                        var userInfoResponse = await httpClient.SendAsync(request);
-                        userInfoResponse.EnsureSuccessStatusCode();
+                    var userInfoResponse = await Constants.HttpClient.SendAsync(request);
+                    userInfoResponse.EnsureSuccessStatusCode();
 
-                        var content = await userInfoResponse.Content.ReadAsStringAsync();
-                        jsonResponse = JsonConvert.DeserializeObject(content);
+                    var content = await userInfoResponse.Content.ReadAsStringAsync();
+                    jsonResponse = JsonConvert.DeserializeObject(content);
 
-                        var user = jsonResponse?.user;
-                        string status = user?.profile?.status_text ?? string.Empty;
-                        string statusEmoji = user?.profile?.status_emoji ?? string.Empty;
-                        string statusExpiresOn = user?.profile?.status_expiration ?? "0";
-                        string displayName = user?.profile?.display_name ?? "Guess who";//Should fall back to full_name...
-                        string userTZ = user?.tz_label;
+                    var user = jsonResponse?.user;
+                    string status = user?.profile?.status_text ?? string.Empty;
+                    string statusEmoji = user?.profile?.status_emoji ?? string.Empty;
+                    string statusExpiresOn = user?.profile?.status_expiration ?? "0";
+                    string displayName = user?.profile?.display_name ?? "Guess who";//Should fall back to full_name...
+                    string userTZ = user?.tz_label;
 
-                        DateTime utc = Constants.Epoch.AddSeconds(Convert.ToInt64(statusExpiresOn));
-                        DateTime userTZTime = utc.AddSeconds(Convert.ToInt64(user?.tz_offset));
-                       
-                        string line = null;
+                    DateTime utc = Constants.Epoch.AddSeconds(Convert.ToInt64(statusExpiresOn));
+                    DateTime userTZTime = utc.AddSeconds(Convert.ToInt64(user?.tz_offset));
 
-                        if (status.IsPTO() || statusEmoji.IsPTO())
-                        {
-                            line = displayName + " seems to be off according to their status" + GetPTOUntilPhraseIfPresent(userTZ, userTZTime, utc);
-                            lines.Add(line);
-                        }
+                    string line = null;
+
+                    if (status.IsPTO() || statusEmoji.IsPTO())
+                    {
+                        line = displayName + " seems to be off according to their status" + GetPTOUntilPhraseIfPresent(userTZ, userTZTime, utc);
+                        lines.Add(line);
                     }
-                    //None of the @ mentions are on pto
-                    if (lines == null || !lines.Any()) return new OkObjectResult("mentioned are not on pto");
-
-                    message = lines.BuildMessage().AddLineBreak(2) + AdvertiseOtherFeatures();
-
-                    var chatRequest = new HttpRequestMessage(HttpMethod.Post, new Uri(@"https://slack.com/api/chat.postMessage"));
-                    chatRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Secrets.BotUserOAuthToken);
-
-                    var fullMessage = "Hello there,".AddLineBreak(2) + message;
-                    var postBody = JsonConvert.SerializeObject(
-                        new //Anonymous type 
-                        {
-                            channel = channel,
-                            text = fullMessage,
-                            thread_ts = thread
-                        },
-                        Formatting.Indented, new JsonSerializerSettings { DefaultValueHandling = DefaultValueHandling.Ignore });
-
-                    chatRequest.Content = new StringContent(postBody, Encoding.UTF8, @"application/json");
-
-                    var response = await httpClient.SendAsync(chatRequest);
-                    response.EnsureSuccessStatusCode();
-                    log.LogInformation($"pto message posted successfully.");
                 }
+                //None of the @ mentions are on pto
+                if (lines == null || !lines.Any()) return new OkObjectResult("mentioned are not on pto");
+
+                message = lines.BuildMessage().AddLineBreak(2) + AdvertiseOtherFeatures();
+
+                var chatRequest = new HttpRequestMessage(HttpMethod.Post, new Uri(@"https://slack.com/api/chat.postMessage"));
+                chatRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Secrets.BotUserOAuthToken);
+
+                var fullMessage = "Hello there,".AddLineBreak(2) + message;
+                var postBody = JsonConvert.SerializeObject(
+                    new //Anonymous type 
+                        {
+                        channel = channel,
+                        text = fullMessage,
+                        thread_ts = thread
+                    },
+                    Formatting.Indented, new JsonSerializerSettings { DefaultValueHandling = DefaultValueHandling.Ignore });
+
+                chatRequest.Content = new StringContent(postBody, Encoding.UTF8, @"application/json");
+
+                var response = await Constants.HttpClient.SendAsync(chatRequest);
+                response.EnsureSuccessStatusCode();
+                log.LogInformation($"pto message posted successfully.");
+
             }
             catch (System.Exception ex)
             {
@@ -122,7 +121,7 @@ namespace PTO
         {
             var backtick = "`";
             if (utc == DateTime.UnixEpoch) return ".";
-            
+
             return " until " + backtick + userTZTime.ToShortenedLongForm() + " " + userTZLabel + backtick + " or " + backtick + utc.ToShortenedLongForm() + " UTC." + backtick;
         }
     }

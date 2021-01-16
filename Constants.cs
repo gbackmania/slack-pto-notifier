@@ -1,10 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
+
 namespace PTO
 {
     public static class Constants
     {
+        public static HttpClient HttpClient = new HttpClient();
         public static readonly List<string> Keywords = new List<string>() { "pto", "ooo", "vacation", "vacationing" };
         public static readonly List<string> Phrases = new List<string>() { "out sick", "out of office" };
         public static readonly List<string> PTOEmojis = new List<string> { ":pto:" };

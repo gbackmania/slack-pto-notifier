@@ -7,6 +7,7 @@ namespace PTO
 {
     public static class Constants
     {
+        //https://docs.microsoft.com/en-us/azure/azure-functions/manage-connections#static-clients
         public static HttpClient HttpClient = new HttpClient();
         public static readonly List<string> Keywords = new List<string>() { "pto", "ooo", "vacation", "vacationing" };
         public static readonly List<string> Phrases = new List<string>() { "out sick", "out of office" };

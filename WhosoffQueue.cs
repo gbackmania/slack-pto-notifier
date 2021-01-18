@@ -28,19 +28,17 @@ namespace PTO
                 log = logger;
                 string message = null;
                 string requestBody = queueItem;
-
                 dynamic jsonResponse = null;
-                using (var httpClient = new HttpClient())
-                {
-                    var request = new HttpRequestMessage(HttpMethod.Get, new Uri(@"https://slack.com/api/users.list"));
-                    request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Secrets.BotUserOAuthToken);
 
-                    var userInfoResponse = await httpClient.SendAsync(request);
-                    userInfoResponse.EnsureSuccessStatusCode();
+                var request = new HttpRequestMessage(HttpMethod.Get, new Uri(@"https://slack.com/api/users.list"));
+                request.Headers.Authorization = Constants.BearerToken;
 
-                    var content = await userInfoResponse.Content.ReadAsStringAsync();
-                    jsonResponse = JsonConvert.DeserializeObject(content);
-                }
+                var userInfoResponse = await Constants.HttpClient.SendAsync(request);
+                userInfoResponse.EnsureSuccessStatusCode();
+
+                var content = await userInfoResponse.Content.ReadAsStringAsync();
+                jsonResponse = JsonConvert.DeserializeObject(content);
+
                 JArray members = jsonResponse?.members;
                 var activeMembers = members
                     ?.RemoveDeletedMembers()
@@ -98,7 +96,6 @@ namespace PTO
 
         private static async Task PostEphemeralMessage(string message)
         {
-
             var response = await PostEphemeralMessageActual(message, messageTo.channel, messageTo.invokedUser);
 
             dynamic postEphemeralResponse = JsonConvert.DeserializeObject(await response.Content.ReadAsStringAsync());
@@ -109,18 +106,15 @@ namespace PTO
 
         private static async Task<HttpResponseMessage> PostEphemeralMessageActual(string message, string channel, string user)
         {
-            using (var httpClient = new HttpClient())
-            {
-                var request = new HttpRequestMessage(HttpMethod.Post, new Uri(@"https://slack.com/api/chat.postEphemeral"));
-                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Secrets.BotUserOAuthToken);
+            var request = new HttpRequestMessage(HttpMethod.Post, new Uri(@"https://slack.com/api/chat.postEphemeral"));
+            request.Headers.Authorization = Constants.BearerToken;
 
-                var postBody = BuildPostEphemeralMessageBody(message, channel, user);
+            var postBody = BuildPostEphemeralMessageBody(message, channel, user);
 
-                request.Content = new StringContent(postBody, Encoding.UTF8, @"application/json");
-                var response = await httpClient.SendAsync(request);
-                response.EnsureSuccessStatusCode();
-                return response;
-            }
+            request.Content = new StringContent(postBody, Encoding.UTF8, @"application/json");
+            var response = await Constants.HttpClient.SendAsync(request);
+            response.EnsureSuccessStatusCode();
+            return response;
         }
         private static string BuildPostEphemeralMessageBody(string message, string channel, string user)
         {

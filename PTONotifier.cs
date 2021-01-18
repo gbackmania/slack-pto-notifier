@@ -54,7 +54,7 @@ namespace PTO
                     {
                         Content = new FormUrlEncodedContent(paramList)
                     };
-                    request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Secrets.BotUserOAuthToken);
+                    request.Headers.Authorization = Constants.BearerToken;
 
                     var userInfoResponse = await Constants.HttpClient.SendAsync(request);
                     userInfoResponse.EnsureSuccessStatusCode();
@@ -86,7 +86,7 @@ namespace PTO
                 message = lines.BuildMessage().AddLineBreak(2) + AdvertiseOtherFeatures();
 
                 var chatRequest = new HttpRequestMessage(HttpMethod.Post, new Uri(@"https://slack.com/api/chat.postMessage"));
-                chatRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Secrets.BotUserOAuthToken);
+                chatRequest.Headers.Authorization = Constants.BearerToken;
 
                 var fullMessage = "Hello there,".AddLineBreak(2) + message;
                 var postBody = JsonConvert.SerializeObject(

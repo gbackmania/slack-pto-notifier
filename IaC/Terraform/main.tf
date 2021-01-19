@@ -43,10 +43,12 @@ resource "azurerm_function_app" "main" {
   app_service_plan_id       = azurerm_app_service_plan.main.id
   storage_account_name      = azurerm_storage_account.main.name
   storage_account_access_key = azurerm_storage_account.main.primary_access_key
-  version                    = "~3"
-
+  version                   = "~3"
+  https_only                = true
+    
   site_config {
     ftps_state          = "Disabled"
+    use_32_bit_worker_process = false
   }
 
   app_settings = {

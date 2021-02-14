@@ -111,10 +111,7 @@ namespace PTO
             return new OkObjectResult("pto message posted successfully.");
         }
 
-        private static string AdvertiseOtherFeatures()
-        {
-            return $"_By the way, to see which team members are off, type `/whoisoff` in slack message box, aka command line._";
-        }
+        private static string AdvertiseOtherFeatures() => $"_By the way, to see which team members are off, type `/whoisoff` in slack message box, aka command line._";
 
         private static string GetPTOUntilPhraseIfPresent(string userTZLabel, DateTime userTZTime, DateTime utc)
         {

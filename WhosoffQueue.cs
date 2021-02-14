@@ -18,14 +18,14 @@ namespace PTO
 {
     public static class WhosoffQueue
     {
-        private static (string channel, string invokedUser) messageTo = (null, null);
-        private static ILogger log = null;
+        private static Command _command = null;
+        private static ILogger _log = null;
         [FunctionName("WhosoffQueue")]
-        public static async Task Run([ServiceBusTrigger("whosoff", Connection = "SERVICEBUS_CONNECTION_STRING")] string queueItem, ILogger logger)
+        public static async Task Run([ServiceBusTrigger("whosoff", Connection = "SERVICEBUS_CONNECTION_STRING")] string queueItem, ILogger log)
         {
             try
             {
-                log = logger;
+                _log = log;
                 string message = null;
                 string requestBody = queueItem;
                 dynamic jsonResponse = null;
@@ -47,7 +47,7 @@ namespace PTO
                     ?.GetMembersWithPTOStatus()
                     ?.SortByRealName();
 
-                messageTo = GetChannelAndUserId(requestBody);
+                _command = Command.Parse(requestBody);
 
                 if (ptoMembers == null || !ptoMembers.Any())
                 {
@@ -56,7 +56,7 @@ namespace PTO
                     return;
                 }
 
-                var (invokedUserTzOffset, invokedUserTzLabel) = activeMembers.GetTimeZoneOffsetAndLabel(messageTo.invokedUser);
+                var (invokedUserTzOffset, invokedUserTzLabel) = activeMembers.GetTimeZoneOffsetAndLabel(_command.UserId);
 
                 Int64 statusExpiresOn;
                 List<string> lines = new List<string>();
@@ -81,8 +81,8 @@ namespace PTO
             }
             catch (System.Exception ex)
             {
-                log.LogError($"Error: {ex.StackTrace}");
-                await PostEphemeralMessage(@"Oopsie! Something went wrong. Please try `/whoisoff` command again.");
+                _log.LogError($"Error: {ex.StackTrace}");
+                await PostEphemeralMessage(@"Oopsie! Something went wrong. Please try `/whoisoff` command again in a little bit.");
                 return;
             }
         }
@@ -96,12 +96,12 @@ namespace PTO
 
         private static async Task PostEphemeralMessage(string message)
         {
-            var response = await PostEphemeralMessageActual(message, messageTo.channel, messageTo.invokedUser);
+            var response = await PostEphemeralMessageActual(message, _command.ChannelId, _command.UserId);
 
             dynamic postEphemeralResponse = JsonConvert.DeserializeObject(await response.Content.ReadAsStringAsync());
             if (postEphemeralResponse?.error == null) return;
             //channel and user are the same so we can send the message directly to the user
-            await PostEphemeralMessageActual(message, messageTo.invokedUser, messageTo.invokedUser);
+            await PostEphemeralMessageActual(message, _command.UserId, _command.UserId);
         }
 
         private static async Task<HttpResponseMessage> PostEphemeralMessageActual(string message, string channel, string user)
@@ -134,7 +134,7 @@ namespace PTO
             string printableQuery = null;
             var parameters = coll.AllKeys.SelectMany(coll.GetValues, (k, v) => new { key = k, value = v });
             foreach (var p in parameters) printableQuery += $"{p.key}: {p.value}, ";
-            log.LogInformation($"off the queue - {printableQuery}");
+            _log.LogInformation($"off the queue - {printableQuery}");
         }
     }
 }

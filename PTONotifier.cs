@@ -29,8 +29,7 @@ namespace PTO
                 //Verify request URL by responding to one-time initial challenge during slack app creation. dynamic type makes this a cake in the park ❤️
                 if (data?.challenge != null) return new OkObjectResult(data?.challenge);
 
-                var sentByUser = data?.@event?.user;
-                if (sentByUser == Secrets.PTONotifierUserId) return new OkObjectResult("disregard messages by this app user/bot");
+                if (data?.@event?.bot_id != null) return new OkObjectResult("disregard messages by app users/bots");
 
                 JArray messageElements = data?.@event?.blocks?.First?.elements?.First?.elements;
                 var channel = data?.@event?.channel;

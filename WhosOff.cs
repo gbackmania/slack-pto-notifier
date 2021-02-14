@@ -22,15 +22,15 @@ namespace PTO
     {
         [FunctionName("WhosOff")]
         public static async Task<IActionResult> Run(
-            [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
-            [ServiceBus("whosoff", Connection = "SERVICEBUS_CONNECTION_STRING", EntityType = EntityType.Queue)] ICollector<Message> queueCollector,
-            ILogger log)
+            [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req, ILogger log,
+            [ServiceBus("whosoff", Connection = "SERVICEBUS_CONNECTION_STRING", EntityType = EntityType.Queue)] ICollector<Message> queueCollector)
         {
             try
             {
                 string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
+                var command = Command.Parse(requestBody);
                 var bytes = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(requestBody));
-                var message = new Message(bytes){ MessageId = Guid.NewGuid().ToString() };
+                var message = new Message(bytes) { MessageId = $"{command.TeamId}-{command.UserId}"};
                
                 queueCollector.Add(message);
                 return new OkObjectResult(string.Empty); //TODO: Send "is typing message"
@@ -38,7 +38,7 @@ namespace PTO
             catch (System.Exception ex)
             {
                 log.LogError($"Error: {ex.StackTrace}");
-                return new OkObjectResult(@"Oopsie! Something went wrong. Please try `/whoisoff` command again.");
+                return new OkObjectResult(@"Oopsie! Something went wrong. Please try `/whoisoff` command again in a little bit.");
             }
         }
 

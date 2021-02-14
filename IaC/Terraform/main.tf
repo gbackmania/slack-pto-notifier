@@ -70,10 +70,11 @@ resource "azurerm_servicebus_queue" "main" {
   resource_group_name = azurerm_resource_group.main.name
   namespace_name      = azurerm_servicebus_namespace.main.name
 
-  enable_partitioning = true
+  enable_partitioning = false
   default_message_ttl = "PT60S"
   dead_lettering_on_message_expiration = true
   requires_duplicate_detection = true
+  duplicate_detection_history_time_window = "PT2M"
 }
 
 resource "azurerm_servicebus_queue_authorization_rule" "main" {

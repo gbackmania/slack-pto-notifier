@@ -19,11 +19,11 @@ namespace PTO
     {
         [FunctionName("PTONotifier")]
         public static async Task<IActionResult> Run(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)] HttpRequest req, ILogger log)
+            [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req, ILogger log)
         {
             try
             {
-                string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
+                var requestBody = await new StreamReader(req.Body).ReadToEndAsync();
                 dynamic data = JsonConvert.DeserializeObject(requestBody);
 
                 //Verify request URL by responding to one-time initial challenge during slack app creation. dynamic type makes this a cake in the park ❤️
@@ -103,7 +103,6 @@ namespace PTO
                 var response = await Constants.HttpClient.SendAsync(chatRequest);
                 response.EnsureSuccessStatusCode();
                 log.LogInformation($"pto message posted successfully.");
-
             }
             catch (System.Exception ex)
             {

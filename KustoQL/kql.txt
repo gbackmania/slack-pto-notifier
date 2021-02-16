@@ -1,0 +1,5 @@
+traces 
+| where customDimensions.prop__whosoffuser == "<name>"
+
+traces
+| summarize by tostring(customDimensions.prop__whosoffuser)

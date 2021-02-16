@@ -40,7 +40,7 @@ namespace PTO
                 if (users == null || !users.Any()) return new OkObjectResult("no mentions");
 
                 string message = string.Empty;
-                List<string> lines = new List<string>();
+                var lines = new List<string>();
 
                 dynamic jsonResponse = null;
                 foreach (JToken u in users)

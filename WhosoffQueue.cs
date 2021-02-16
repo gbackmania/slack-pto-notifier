@@ -27,8 +27,9 @@ namespace PTO
             {
                 _log = log;
                 string message = null;
-                string requestBody = queueItem;
                 dynamic jsonResponse = null;
+                _command = Command.Parse(queueItem);
+                log.LogInformation("whosoffuser={whosoffuser}, whosoffteam={whosoffteam}", _command?.Username, _command.TeamId);
 
                 var request = new HttpRequestMessage(HttpMethod.Get, new Uri(@"https://slack.com/api/users.list"));
                 request.Headers.Authorization = Constants.BearerToken;
@@ -46,8 +47,6 @@ namespace PTO
                 var ptoMembers = activeMembers
                     ?.GetMembersWithPTOStatus()
                     ?.SortByRealName();
-
-                _command = Command.Parse(requestBody);
 
                 if (ptoMembers == null || !ptoMembers.Any())
                 {

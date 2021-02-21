@@ -65,7 +65,8 @@ namespace PTO
                     string status = user?.profile?.status_text ?? string.Empty;
                     string statusEmoji = user?.profile?.status_emoji ?? string.Empty;
                     string statusExpiresOn = user?.profile?.status_expiration ?? "0";
-                    string displayName = user?.profile?.display_name ?? "Guess who";//Should fall back to full_name...
+                    string displayName = user?.profile?.display_name ?? string.Empty;
+                    string name = !string.IsNullOrEmpty(displayName)  ? displayName : user?.name;
                     string userTZ = user?.tz_label;
 
                     DateTime utc = Constants.Epoch.AddSeconds(Convert.ToInt64(statusExpiresOn));
@@ -75,7 +76,7 @@ namespace PTO
 
                     if (status.IsPTO() || statusEmoji.IsPTO())
                     {
-                        line = displayName + " seems to be off according to their status" + GetPTOUntilPhraseIfPresent(userTZ, userTZTime, utc);
+                        line = name + " seems to be off according to their status" + GetPTOUntilPhraseIfPresent(userTZ, userTZTime, utc);
                         lines.Add(line);
                     }
                 }

@@ -18,5 +18,8 @@ namespace PTO
         
         // Recommendation on reading app settings - https://docs.microsoft.com/en-us/azure/azure-functions/functions-dotnet-class-library?tabs=v2%2Ccmd#environment-variables
         public static readonly AuthenticationHeaderValue BearerToken = new AuthenticationHeaderValue("Bearer", Environment.GetEnvironmentVariable("BotUserOAuthToken"));
+        public static readonly string ClientId = Environment.GetEnvironmentVariable("ClientId");
+        public static readonly string ClientSecret = Environment.GetEnvironmentVariable("ClientSecret");
+        public static readonly string VaultURI = Environment.GetEnvironmentVariable("Vault_URI");
     }
 }

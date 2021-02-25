@@ -28,16 +28,20 @@ namespace PTO
 
                 //Verify request URL by responding to one-time initial challenge during slack app creation. dynamic type makes this a cake in the park ❤️
                 if (data?.challenge != null) return new OkObjectResult(data?.challenge);
+                
+                string team = data?.@event?.team;
+                string channel = data?.@event?.channel;
+                string sentUser = data?.@event?.user;
+                string thread = data?.@event?.thread_ts;
 
-                if (data?.@event?.bot_id != null) return new OkObjectResult("disregard messages by app users/bots");
+                log.LogInformation("func={func}, action={action}, team={team}, channel={channel}, user={user}", nameof(PTONotifier), ActionType.Received, team, channel, sentUser);
+
+                if (data?.@event?.bot_id != null) return new OkObjectResult(ActionType.Bots);
 
                 JArray messageElements = data?.@event?.blocks?.First?.elements?.First?.elements;
-                var channel = data?.@event?.channel;
-                var thread = data?.@event?.thread_ts;
-
                 var users = messageElements?.GetDistinctUsers();
 
-                if (users == null || !users.Any()) return new OkObjectResult("no mentions");
+                if (users == null || !users.Any()) return new OkObjectResult(ActionType.NoMentions);
 
                 string message = string.Empty;
                 var lines = new List<string>();
@@ -81,7 +85,7 @@ namespace PTO
                     }
                 }
                 //None of the @ mentions are on pto
-                if (lines == null || !lines.Any()) return new OkObjectResult("mentioned are not on pto");
+                if (lines == null || !lines.Any()) return new OkObjectResult(ActionType.MentionedNotPTO);
 
                 message = lines.BuildMessage().AddLineBreak(2) + AdvertiseOtherFeatures();
 
@@ -102,23 +106,30 @@ namespace PTO
 
                 var response = await Constants.HttpClient.SendAsync(chatRequest);
                 response.EnsureSuccessStatusCode();
-                log.LogInformation($"pto message posted successfully.");
+                log.LogInformation("func={func}, action={action}, team={team}, channel={channel}, user={user}", nameof(PTONotifier), ActionType.PostMessage, team, channel, sentUser);
             }
             catch (System.Exception ex)
             {
                 log.LogError($"Error: {ex.StackTrace}");
             }
-            return new OkObjectResult("pto message posted successfully.");
+            return new OkObjectResult(ActionType.PostMessage);
         }
 
         private static string AdvertiseOtherFeatures() => $"_By the way, to see which team members are off, type `/whoisoff` in slack message box, aka command line._";
 
         private static string GetPTOUntilPhraseIfPresent(string userTZLabel, DateTime userTZTime, DateTime utc)
         {
-            var backtick = "`";
             if (utc == DateTime.UnixEpoch) return ".";
+            return $" until `{userTZTime.ToShortenedLongForm()} {userTZLabel}` or `{utc.ToShortenedLongForm()} GMT.`";
+        }
 
-            return " until " + backtick + userTZTime.ToShortenedLongForm() + " " + userTZLabel + backtick + " or " + backtick + utc.ToShortenedLongForm() + " GMT." + backtick;
+        private static class ActionType
+        {
+            public static readonly string Received = "recv";
+            public static readonly string PostMessage = "postmsg";
+            public static readonly string NoMentions = "nomentions";
+            public static readonly string MentionedNotPTO = "mentionednotpto";
+            public static readonly string Bots = "bots";
         }
     }
 }

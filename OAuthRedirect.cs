@@ -23,14 +23,11 @@ namespace PTO
         {
             try
             {
-                log.LogInformation($"code: {req.Query["code"]}");
-                log.LogInformation($"query string: {req.QueryString.ToString()}");
-
                 var paramList = new Dictionary<string, string>()
                         {
                             {"code", req.Query["code"] },
-                            {"client_id", Constants.ClientId},
-                            {"client_secret", Constants.ClientSecret}
+                            {"client_id", Secrets.GetClientId()},
+                            {"client_secret", Secrets.GetClientSecret()}
                         };
                 var oauthreq = new HttpRequestMessage(HttpMethod.Post, new Uri(@"https://slack.com/api/oauth.v2.access"))
                 {
@@ -46,11 +43,11 @@ namespace PTO
                 string teamName = data?.team?.name;
 
                 //save the code in vault and save the team details in mongo or cosmos
-                var kvUri = @"https://test-pto-notifier.vault.azure.net/";
+                var kvUri = Secrets.GetVaultURI();
                 var client = new SecretClient(new Uri(kvUri), new DefaultAzureCredential());
                 await client.SetSecretAsync(teamId, accessToken);
 
-                return new OkObjectResult($"Successfully installed Out Of Office Slack app to {teamName} workspace");
+                return new OkObjectResult($"Successfully installed Out-Of-Office Slack app to {teamName} workspace");
             }
             catch (System.Exception ex)
             {

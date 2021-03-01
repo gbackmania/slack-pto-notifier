@@ -39,13 +39,17 @@ namespace PTO
                 if (data?.@event?.bot_id != null) return new OkObjectResult(ActionType.Bots);
 
                 JArray messageElements = data?.@event?.blocks?.First?.elements?.First?.elements;
+                if (messageElements == null)
+                {
+                    log.LogInformation("func={func}, action={action}, team={team}, channel={channel}, user={user}", nameof(PTONotifier), ActionType.MessageElementsBlockNotFound, team, channel, sentUser);
+                    return new OkObjectResult(ActionType.MessageElementsBlockNotFound);
+                } 
+   
                 var users = messageElements?.GetDistinctUsers();
-
                 if (users == null || !users.Any()) return new OkObjectResult(ActionType.NoMentions);
 
                 string message = string.Empty;
                 var lines = new List<string>();
-
                 dynamic jsonResponse = null;
                 foreach (JToken u in users)
                 {
@@ -57,8 +61,7 @@ namespace PTO
                     {
                         Content = new FormUrlEncodedContent(paramList)
                     };
-                    request.Headers.Authorization = Constants.BearerToken;
-
+                    request.Headers.Authorization = await Secrets.GetBearerToken(team);
                     var userInfoResponse = await Constants.HttpClient.SendAsync(request);
                     userInfoResponse.EnsureSuccessStatusCode();
 
@@ -77,7 +80,6 @@ namespace PTO
                     DateTime userTZTime = utc.AddSeconds(Convert.ToInt64(user?.tz_offset));
 
                     string line = null;
-
                     if (status.IsPTO() || statusEmoji.IsPTO())
                     {
                         line = name + " seems to be off according to their status" + GetPTOUntilPhraseIfPresent(userTZ, userTZTime, utc);
@@ -90,8 +92,7 @@ namespace PTO
                 message = lines.BuildMessage().AddLineBreak(2) + AdvertiseOtherFeatures();
 
                 var chatRequest = new HttpRequestMessage(HttpMethod.Post, new Uri(@"https://slack.com/api/chat.postMessage"));
-                chatRequest.Headers.Authorization = Constants.BearerToken;
-
+                chatRequest.Headers.Authorization = await Secrets.GetBearerToken(team);
                 var fullMessage = "Hello there,".AddLineBreak(2) + message;
                 var postBody = JsonConvert.SerializeObject(
                     new //Anonymous type 
@@ -103,14 +104,15 @@ namespace PTO
                     Formatting.Indented, new JsonSerializerSettings { DefaultValueHandling = DefaultValueHandling.Ignore });
 
                 chatRequest.Content = new StringContent(postBody, Encoding.UTF8, @"application/json");
-
                 var response = await Constants.HttpClient.SendAsync(chatRequest);
                 response.EnsureSuccessStatusCode();
+
                 log.LogInformation("func={func}, action={action}, team={team}, channel={channel}, user={user}", nameof(PTONotifier), ActionType.PostMessage, team, channel, sentUser);
             }
             catch (System.Exception ex)
             {
                 log.LogError($"Error: {ex.StackTrace}");
+                return new OkObjectResult(ex.StackTrace); //for testing purposes. slack disregards and doesn't expect anything from this hook. 
             }
             return new OkObjectResult(ActionType.PostMessage);
         }
@@ -130,6 +132,7 @@ namespace PTO
             public static readonly string NoMentions = "nomentions";
             public static readonly string MentionedNotPTO = "mentionednotpto";
             public static readonly string Bots = "bots";
+            public static readonly string MessageElementsBlockNotFound = "msgelemnotfound";
         }
     }
 }

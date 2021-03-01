@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Threading.Tasks;
+using Azure.Identity;
+using Azure.Security.KeyVault.Secrets;
 
 namespace PTO
 {
@@ -15,11 +18,5 @@ namespace PTO
         public static readonly List<string> PTOEmojis = new List<string> { ":pto:" };
         public static readonly DateTime Epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
         public static readonly string BotAlgoDesc = $"_PTO Notifier looks for one of the keywords: *{string.Join(", ", Constants.Keywords)}*; or a phrase: *{string.Join(", ", Constants.Phrases)}*, in the status._";
-        
-        // Recommendation on reading app settings - https://docs.microsoft.com/en-us/azure/azure-functions/functions-dotnet-class-library?tabs=v2%2Ccmd#environment-variables
-        public static readonly AuthenticationHeaderValue BearerToken = new AuthenticationHeaderValue("Bearer", Environment.GetEnvironmentVariable("BotUserOAuthToken"));
-        public static readonly string ClientId = Environment.GetEnvironmentVariable("ClientId");
-        public static readonly string ClientSecret = Environment.GetEnvironmentVariable("ClientSecret");
-        public static readonly string VaultURI = Environment.GetEnvironmentVariable("Vault_URI");
     }
 }

@@ -32,7 +32,7 @@ namespace PTO
                 log.LogInformation("whosoffuser={whosoffuser}, whosoffteam={whosoffteam}", _command?.Username, _command.TeamId);
 
                 var request = new HttpRequestMessage(HttpMethod.Get, new Uri(@"https://slack.com/api/users.list"));
-                request.Headers.Authorization = Constants.BearerToken;
+                request.Headers.Authorization = await Secrets.GetBearerToken(_command.TeamId);
 
                 var userInfoResponse = await Constants.HttpClient.SendAsync(request);
                 userInfoResponse.EnsureSuccessStatusCode();
@@ -106,7 +106,7 @@ namespace PTO
         private static async Task<HttpResponseMessage> PostEphemeralMessageActual(string message, string channel, string user)
         {
             var request = new HttpRequestMessage(HttpMethod.Post, new Uri(@"https://slack.com/api/chat.postEphemeral"));
-            request.Headers.Authorization = Constants.BearerToken;
+            request.Headers.Authorization = await Secrets.GetBearerToken(_command.TeamId);
 
             var postBody = BuildPostEphemeralMessageBody(message, channel, user);
 

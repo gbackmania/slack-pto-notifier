@@ -26,8 +26,8 @@ namespace PTO
                 var paramList = new Dictionary<string, string>()
                         {
                             {"code", req.Query["code"] },
-                            {"client_id", Secrets.GetClientId()},
-                            {"client_secret", Secrets.GetClientSecret()}
+                            {"client_id", await Secrets.GetClientId()},
+                            {"client_secret", await Secrets.GetClientSecret()}
                         };
                 var oauthreq = new HttpRequestMessage(HttpMethod.Post, new Uri(@"https://slack.com/api/oauth.v2.access"))
                 {

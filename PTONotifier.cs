@@ -26,6 +26,12 @@ namespace PTO
                 var requestBody = await new StreamReader(req.Body).ReadToEndAsync();
                 dynamic data = JsonConvert.DeserializeObject(requestBody);
 
+                if(data?.@event?.type == "app_uninstalled")
+                {
+                    log.LogInformation("func={func}, action={action}, team={team}", nameof(PTONotifier), ActionType.AppUninstalled, (string)data?.team_id);
+                    return new OkObjectResult(ActionType.AppUninstalled);
+                }
+
                 //Verify request URL by responding to one-time initial challenge during slack app creation. dynamic type makes this a cake in the park ❤️
                 if (data?.challenge != null) return new OkObjectResult(data?.challenge);
                 
@@ -133,6 +139,7 @@ namespace PTO
             public static readonly string MentionedNotPTO = "mentionednotpto";
             public static readonly string Bots = "bots";
             public static readonly string MessageElementsBlockNotFound = "msgelemnotfound";
+            public static readonly string AppUninstalled = "appuninstalled";
         }
     }
 }

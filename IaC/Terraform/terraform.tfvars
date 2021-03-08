@@ -1,3 +1,3 @@
 location = "eastus"
 
-prefix = "ptonotifier1"
+prefix = "outofoffice"

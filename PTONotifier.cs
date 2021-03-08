@@ -82,8 +82,8 @@ namespace PTO
                     string name = !string.IsNullOrEmpty(displayName)  ? displayName : user?.name;
                     string userTZ = user?.tz_label;
 
-                    DateTime utc = Constants.Epoch.AddSeconds(Convert.ToInt64(statusExpiresOn));
-                    DateTime userTZTime = utc.AddSeconds(Convert.ToInt64(user?.tz_offset));
+                    var utc = Constants.Epoch.AddSeconds(Convert.ToInt64(statusExpiresOn));
+                    var userTZTime = utc.AddSeconds(Convert.ToInt64(user?.tz_offset));
 
                     string line = null;
                     if (status.IsPTO() || statusEmoji.IsPTO())

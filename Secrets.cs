@@ -17,11 +17,10 @@ namespace PTO
         public static async Task<string> GetClientId() => await GetSecret("clientId");
         public static async Task<string> GetClientSecret() => await GetSecret("clientsecret");
         public static string GetVaultURI() => Environment.GetEnvironmentVariable("Vault_URI");
+        public static SecretClient VaultClient => new SecretClient(new Uri(GetVaultURI()), new DefaultAzureCredential());
         public static async Task<string> GetSecret(string key)
         {
-            var kvUri = GetVaultURI();
-            var client = new SecretClient(new Uri(kvUri), new DefaultAzureCredential());
-            var token = await client.GetSecretAsync(key);
+            var token = await VaultClient.GetSecretAsync(key);
             return token?.Value?.Value;
         }
     }

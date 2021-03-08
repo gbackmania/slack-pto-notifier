@@ -43,9 +43,7 @@ namespace PTO
                 string teamName = data?.team?.name;
 
                 //save the code in vault and save the team details in mongo or cosmos
-                var kvUri = Secrets.GetVaultURI();
-                var client = new SecretClient(new Uri(kvUri), new DefaultAzureCredential());
-                await client.SetSecretAsync(teamId, accessToken);
+                await Secrets.VaultClient.SetSecretAsync(teamId, accessToken);
 
                 return new OkObjectResult($"Successfully installed Out-Of-Office Slack app to {teamName} workspace");
             }

@@ -28,7 +28,12 @@ namespace PTO
 
                 if(data?.@event?.type == "app_uninstalled")
                 {
-                    log.LogInformation("func={func}, action={action}, team={team}", nameof(PTONotifier), ActionType.AppUninstalled, (string)data?.team_id);
+                    string teamId = data?.team_id;
+                    var secret = await Secrets.VaultClient.GetSecretAsync(teamId);
+                    secret.Value.Properties.Enabled = false;
+                    secret.Value.Properties.ExpiresOn = DateTimeOffset.UtcNow;
+                    var expiredSecret = await Secrets.VaultClient.UpdateSecretPropertiesAsync(secret.Value.Properties);
+                    log.LogInformation("func={func}, action={action}, team={team}, secretexpiredon={secretexpiredon}", nameof(PTONotifier), ActionType.AppUninstalled, teamId, expiredSecret?.Value?.ExpiresOn);
                     return new OkObjectResult(ActionType.AppUninstalled);
                 }
 
